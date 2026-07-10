@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>아이포인트 — 시니어 눈 건강 앱</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+  /* ===== 저피로(低疲勞) 컬러 시스템 =====
+     밝은 흰색/블루 광원 대신 눈이 편안한 세이지 그린 + 크림 톤 사용 */
+  :root{
+    --bg:        #eef7e6;   /* 라이트그린 배경 (저자극) */
+    --surface:   #fbfef7;   /* 카드 표면 */
+    --primary:   #7ac47a;   /* 라이트그린 (눈 피로 완화) */
+    --primary-d: #4f9e57;
+    --accent:    #c98a3c;   /* 따뜻한 골드 (포인트/리워드) */
+    --text:      #2b342a;   /* 짙은 녹회색 (순수 검정보다 부드러움) */
+    --text-sub:  #737d6f;
+    --line:      #e2e6d6;
+    --danger:    #c76b5a;
+    --radius:    20px;
+    --shadow:    0 6px 22px rgba(52,66,44,.09);
+    --shadow-sm: 0 2px 8px rgba(52,66,44,.06);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    font-family:"Pretendard Variable",Pretendard,"Malgun Gothic","맑은 고딕",system-ui,-apple-system,sans-serif;
+    background:radial-gradient(circle at 50% 0%, #d9efc9, #c3e4ac);
+    color:var(--text);
+    display:flex;justify-content:center;align-items:center;
+    min-height:100vh;padding:16px;
+    font-size:17px;line-height:1.55;
+    letter-spacing:-.2px;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ===== 모바일 프레임 ===== */
+  .phone{
+    width:100%;max-width:420px;height:880px;max-height:96vh;
+    background:var(--bg);border-radius:40px;
+    box-shadow:0 30px 70px rgba(30,40,25,.38);
+    overflow:hidden;position:relative;display:flex;flex-direction:column;
+    border:11px solid #232b22;
+  }
+
+  /* 상단 앱바 (프로필 사진 · 이름 · 포인트 현황) */
+  .appbar{
+    background:linear-gradient(135deg,#6b9968,#436b42);
+    color:#fff;padding:20px 18px 18px;
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    flex-shrink:0;box-shadow:0 4px 18px rgba(63,102,64,.28);
+  }
+  .appbar .left{display:flex;align-items:center;gap:8px;min-width:0;}
+  .appbar .back{
+    border:none;background:rgba(255,255,255,.18);color:#fff;flex-shrink:0;
+    width:40px;height:40px;border-radius:50%;font-size:28px;font-weight:800;
+    cursor:pointer;display:none;align-items:center;justify-content:center;
+    line-height:0;font-family:inherit;transition:background .15s;
+  }
+  .appbar .back:active{background:rgba(255,255,255,.34);}
+  .appbar .back.show{display:flex;}
+  .appbar .brand{display:flex;align-items:center;gap:12px;min-width:0;}
+  .appbar .avatar{
+    width:48px;height:48px;border-radius:50%;flex-shrink:0;
+    background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;
+    font-size:14px;font-weight:700;border:2px solid rgba(255,255,255,.6);
+    box-shadow:inset 0 1px 4px rgba(255,255,255,.25);
+  }
+  .appbar .who{line-height:1.25;}
+  .appbar .who .name{font-size:20px;font-weight:800;letter-spacing:-.5px;}
+  .appbar .who .hi{font-size:13px;opacity:.85;}
+  .appbar .points{
+    background:rgba(255,255,255,.18);padding:8px 14px;border-radius:14px;
+    text-align:right;flex-shrink:0;
+  }
+  .appbar .points .lbl{font-size:11px;opacity:.85;display:block;}
+  .appbar .points .val{font-size:18px;font-weight:800;}
+
+  /* 화면 영역 (스크롤) */
+  .screens{flex:1;overflow-y:auto;position:relative;}
+  .screen{display:none;padding:20px 18px 24px;animation:fade .25s ease;}
+  .screen.active{display:block;}
+  @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+
+  h2.sec{font-size:25px;font-weight:800;margin:2px 0 14px;letter-spacing:-.8px;}
+  h3{font-size:18px;font-weight:700;margin:0 0 10px;letter-spacing:-.4px;}
+  p.sub{color:var(--text-sub);font-size:15px;margin-bottom:16px;}
+
+  .card{
+    background:var(--surface);border-radius:var(--radius);padding:18px;
+    box-shadow:var(--shadow);margin-bottom:14px;border:1px solid var(--line);
+  }
+  .card.tap{cursor:pointer;transition:transform .1s;}
+  .card.tap:active{transform:scale(.98);}
+
+  .row{display:flex;align-items:center;gap:14px;}
+  .grow{flex:1;min-width:0;}
+  .muted{color:var(--text-sub);font-size:15px;}
+
+  .btn{
+    display:block;width:100%;border:none;border-radius:14px;
+    background:var(--primary);color:#fff;font-size:19px;font-weight:800;
+    padding:16px;cursor:pointer;transition:background .15s;font-family:inherit;
+  }
+  .btn:active{background:var(--primary-d);}
+  .btn.ghost{background:#e3ead9;color:var(--primary-d);}
+  .btn.gold{background:var(--accent);}
+  .btn.sm{padding:11px;font-size:16px;}
+
+  /* ===== 메인: 원형 텍스트 메뉴 (그림 없이 글자만) ===== */
+  .quick{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:4px 0 4px;}
+  .quick .q{
+    border:none;background:none;cursor:pointer;font-family:inherit;padding:0;
+    display:flex;flex-direction:column;align-items:center;
+  }
+  .quick .q-ic{
+    width:84px;height:84px;border-radius:50%;
+    background:linear-gradient(160deg,#ffffff,#eef2e4);
+    border:1px solid var(--line);box-shadow:var(--shadow);
+    display:flex;align-items:center;justify-content:center;
+    font-size:19px;font-weight:700;color:var(--primary-d);letter-spacing:-.5px;
+    transition:transform .12s, box-shadow .12s;
+  }
+  .quick .q:active .q-ic{transform:scale(.93);box-shadow:var(--shadow-sm);background:linear-gradient(160deg,#eef2e4,#e3ead9);}
+
+  /* 미니 달력 + 주간 일정 (메인) */
+  .home-grid{display:grid;grid-template-columns:1.05fr 1fr;gap:12px;margin-bottom:16px;}
+  .mini-cal{background:var(--surface);border-radius:var(--radius);padding:14px;border:1px solid var(--line);box-shadow:var(--shadow);}
+  .mini-cal .mc-head{font-size:15px;font-weight:800;margin-bottom:8px;text-align:center;}
+  .mc-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;font-size:11px;}
+  .mc-grid .d{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:6px;position:relative;color:var(--text-sub);}
+  .mc-grid .d.today{background:var(--primary);color:#fff;font-weight:800;}
+  .mc-grid .d .mk{position:absolute;bottom:1px;font-size:9px;line-height:1;}
+  .week{background:var(--surface);border-radius:var(--radius);padding:14px;border:1px solid var(--line);box-shadow:var(--shadow);}
+  .week h4{font-size:15px;font-weight:800;margin-bottom:10px;}
+  .week ul{list-style:none;}
+  .week li{font-size:14px;padding:7px 0;border-bottom:1px solid var(--line);color:var(--text-sub);}
+  .week li:last-child{border:none;}
+  .week li b{color:var(--text);}
+
+  /* 알림 배너 */
+  .banner{
+    background:#fff6e5;border:1px solid #f0dcb0;border-radius:14px;padding:14px 16px;
+    display:flex;gap:12px;align-items:center;margin-bottom:16px;font-size:16px;
+  }
+  .banner .b-ic{font-size:24px;flex-shrink:0;}
+
+  .pill{display:inline-block;background:#e3ead9;color:var(--primary-d);padding:4px 12px;border-radius:999px;font-size:14px;font-weight:700;}
+  .pill.gold{background:#f4e3c6;color:#8a5e1e;}
+
+  /* 달력(전체) */
+  .cal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;}
+  .cal-grid .dow{font-size:14px;color:var(--text-sub);font-weight:700;padding:4px 0;}
+  .cal-grid .day{
+    aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    border-radius:10px;font-size:15px;font-weight:600;position:relative;gap:1px;
+  }
+  .cal-grid .day.today{background:var(--primary);color:#fff;}
+  /* 병원 일정: 날짜 위에 동그라미(원형 링) 표시 */
+  .cal-grid .day.hosp{border-radius:50%;box-shadow:inset 0 0 0 2.5px var(--danger);}
+  .cal-grid .day.hosp.today{box-shadow:inset 0 0 0 2.5px #fff;}
+  .cal-grid .day .att{font-size:14px;line-height:1;}
+  .cal-grid .day .dots{display:flex;gap:2px;}
+  .cal-grid .day .dots i{width:6px;height:6px;border-radius:50%;display:inline-block;}
+  .dot-hosp{background:var(--danger);}
+  .dot-eye{background:var(--accent);}
+  .cal-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:14px;font-size:14px;}
+  .cal-legend div{display:flex;align-items:center;gap:6px;}
+  .cal-legend i{width:14px;height:14px;border-radius:50%;display:inline-block;}
+  .cal-legend i.ring{background:none;box-shadow:inset 0 0 0 2.5px var(--danger);}
+
+  /* 일정 목록 */
+  .sched{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--line);}
+  .sched:last-child{border:none;}
+  .sched .date{
+    width:52px;flex-shrink:0;text-align:center;border-radius:12px;padding:8px 0;
+    background:#eef2e4;color:var(--primary-d);line-height:1.1;
+  }
+  .sched .date b{font-size:19px;font-weight:800;display:block;}
+  .sched .date span{font-size:12px;color:var(--text-sub);}
+  .sched .tag{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+
+  /* 검사 목록 */
+  .list-item{display:flex;align-items:center;gap:14px;padding:16px 0;border-bottom:1px solid var(--line);cursor:pointer;}
+  .list-item:last-child{border:none;}
+  .num{
+    width:40px;height:40px;border-radius:12px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;
+    background:#e3ead9;color:var(--primary-d);
+  }
+  .chev{color:var(--text-sub);font-size:22px;}
+
+  /* 란돌트 시표 */
+  .eye-box{background:#fff;border-radius:16px;padding:28px 20px;text-align:center;margin-bottom:16px;border:1px solid var(--line);}
+  .landolt{font-size:120px;font-weight:900;line-height:1;color:var(--text);transition:.2s;user-select:none;}
+  .arrows{display:grid;grid-template-columns:repeat(3,64px);gap:10px;justify-content:center;margin-top:8px;}
+  .arrows button{
+    height:64px;border:none;border-radius:14px;background:#e3ead9;color:var(--primary-d);
+    font-size:28px;font-weight:800;cursor:pointer;font-family:inherit;
+  }
+  .arrows button:active{background:var(--primary);color:#fff;}
+  .arrows .blank{visibility:hidden;}
+
+  /* 병원 위치 지도 (프로토타입) */
+  .map{
+    position:relative;height:170px;border-radius:var(--radius);overflow:hidden;
+    margin-bottom:14px;border:1px solid var(--line);box-shadow:var(--shadow-sm);
+    background:linear-gradient(135deg,#e7ede0,#dbe5d4);
+  }
+  .map-grid{position:absolute;inset:0;
+    background-image:linear-gradient(#c9d4bd 1px,transparent 1px),linear-gradient(90deg,#c9d4bd 1px,transparent 1px);
+    background-size:28px 28px;opacity:.6;}
+  .map .pin{
+    position:absolute;transform:translate(-50%,-50%);width:30px;height:30px;border-radius:50%;
+    background:var(--danger);box-shadow:0 3px 8px rgba(0,0,0,.28);border:2.5px solid #fff;
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-size:14px;font-weight:800;
+  }
+  .map .here{
+    position:absolute;left:50%;bottom:12px;transform:translateX(-50%);
+    background:rgba(43,52,42,.85);color:#fff;padding:6px 14px;border-radius:999px;
+    font-size:13px;font-weight:700;white-space:nowrap;
+  }
+  /* 병원 평점 */
+  .hosp-item{padding:14px 16px;margin-bottom:12px;}
+  .rate{text-align:right;flex-shrink:0;line-height:1.25;}
+  .rate .stars{display:block;color:var(--accent);font-size:14px;letter-spacing:1px;}
+  .rate .stars .half{color:#e0d3b6;}
+  .rate b{font-size:16px;color:var(--text);}
+  .rate .rc{display:block;font-size:11px;color:var(--text-sub);}
+
+  /* 상점 */
+  .shop-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .shop-item{background:var(--surface);border-radius:16px;padding:14px;text-align:center;border:1px solid var(--line);box-shadow:var(--shadow-sm);}
+  .shop-item .photo{
+    width:100%;aspect-ratio:1.4;border-radius:12px;margin-bottom:10px;
+    display:flex;align-items:center;justify-content:center;font-size:46px;
+    background:linear-gradient(150deg,#eef3e6,#dde7d5);border:1px solid var(--line);
+  }
+  .shop-item .nm{font-weight:800;margin-top:2px;}
+  .price{color:var(--accent);font-weight:800;font-size:17px;margin:6px 0 10px;}
+
+  /* 포인트 진행바 */
+  .pbar{height:14px;background:#e0e5d5;border-radius:999px;overflow:hidden;margin:8px 0;}
+  .pbar > i{display:block;height:100%;background:var(--primary);border-radius:999px;}
+
+  /* 레포트: 슬라이드 탭 */
+  .tabs{display:flex;gap:10px;margin-bottom:16px;}
+  .tabs button{
+    flex:1;border:2px solid var(--line);background:var(--surface);border-radius:999px;
+    padding:14px;font-size:17px;font-weight:800;cursor:pointer;font-family:inherit;color:var(--text-sub);
+  }
+  .tabs button.on{background:var(--primary);color:#fff;border-color:var(--primary);}
+  .rpage{display:none;} .rpage.on{display:block;animation:fade .25s ease;}
+
+  /* 막대 그래프 */
+  .chart{display:flex;align-items:flex-end;gap:10px;height:150px;padding:10px 4px 0;}
+  .chart .bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end;}
+  .chart .bar > i{width:100%;background:linear-gradient(180deg,#9ccb95,#6ba767);border-radius:8px 8px 0 0;}
+  .chart .bar span{font-size:12px;color:var(--text-sub);}
+  .chart .bar b{font-size:13px;color:var(--primary-d);}
+  .seg{display:inline-flex;background:#eef2e4;border-radius:999px;padding:3px;gap:2px;}
+  .seg-btn{border:none;background:transparent;color:var(--text-sub);font-family:inherit;font-size:13px;font-weight:800;padding:6px 15px;border-radius:999px;cursor:pointer;}
+  .seg-btn.on{background:var(--primary);color:#fff;}
+
+  /* 하단 네비 (텍스트) */
+  .nav{
+    display:flex;flex-shrink:0;background:var(--surface);border-top:1px solid var(--line);
+    padding:10px 4px calc(10px + env(safe-area-inset-bottom));
+  }
+  .nav button{
+    flex:1;border:none;background:none;padding:6px 2px;cursor:pointer;
+    color:var(--text-sub);font-size:15px;font-weight:800;font-family:inherit;
+    border-radius:10px;
+  }
+  .nav button.active{color:var(--primary);background:#e3ead9;}
+
+  /* 토스트 */
+  .toast{
+    position:absolute;left:50%;bottom:96px;transform:translateX(-50%) translateY(20px);
+    background:var(--text);color:#fff;padding:14px 22px;border-radius:999px;
+    font-size:16px;font-weight:700;opacity:0;pointer-events:none;transition:.3s;white-space:nowrap;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  /* 온보딩 */
+  .logo-big{text-align:center;padding:36px 0 20px;}
+  .logo-big .mark{font-size:60px;}
+  .logo-big h1{font-size:34px;margin-top:8px;letter-spacing:-1px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:15px;font-weight:700;margin-bottom:6px;color:var(--text-sub);}
+  .field input{
+    width:100%;padding:15px;border:2px solid var(--line);border-radius:12px;
+    font-size:18px;font-family:inherit;background:#fff;
+  }
+  .field input:focus{outline:none;border-color:var(--primary);}
+
+  /* 문진표 */
+  .q-block{margin-bottom:12px;}
+  .q-block .q-ttl{font-size:16px;font-weight:800;line-height:1.5;margin-bottom:10px;color:var(--text);}
+  .q-block .q-ttl .no{color:var(--primary-d);}
+  .q-block .hint{display:block;font-size:13px;font-weight:600;color:var(--accent);margin-top:4px;}
+  .opt{
+    display:flex;align-items:center;gap:12px;padding:13px 14px;margin-bottom:8px;
+    border:2px solid var(--line);border-radius:12px;background:#fff;cursor:pointer;
+    font-size:16px;transition:.15s;
+  }
+  .opt:last-child{margin-bottom:0;}
+  .opt input{width:22px;height:22px;accent-color:var(--primary);flex-shrink:0;}
+  .opt:has(input:checked){border-color:var(--primary);background:#eef3e6;font-weight:700;}
+  .survey-sec{font-size:14px;font-weight:800;color:var(--text-sub);letter-spacing:.5px;margin:6px 0 10px;}
+  .skip-top{
+    flex-shrink:0;border:none;background:#e3ead9;color:var(--primary-d);
+    font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;
+    padding:9px 16px;border-radius:999px;
+  }
+  .skip-top:active{background:#d3ddc4;}
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <!-- ===== 앱바: 프로필 사진 · 이름 · 포인트 현황 ===== -->
+  <div class="appbar" id="appbar" style="display:none;">
+    <div class="left">
+      <button class="back" id="backBtn" onclick="goBack()" aria-label="뒤로가기">‹</button>
+      <div class="brand" onclick="go('profile')" style="cursor:pointer;">
+        <div class="avatar">사진</div>
+        <div class="who">
+          <div class="name" id="userName">민병관 님</div>
+          <div class="hi">오늘도 눈 건강 챙겨요</div>
+        </div>
+      </div>
+    </div>
+    <div class="points" onclick="go('point')" style="cursor:pointer;">
+      <span class="lbl">포인트 현황</span>
+      <span class="val"><span id="ptsTop">12,400</span> P</span>
+    </div>
+  </div>
+
+  <div class="screens">
+
+    <!-- ========== 온보딩 ========== -->
+    <section class="screen active" id="s-onboard" style="padding-top:30px;">
+      <div class="logo-big">
+        <div class="mark">👁️</div>
+        <h1>아이포인트</h1>
+        <p class="sub" style="text-align:center;">혼자서도 챙기는 시니어 눈 건강</p>
+      </div>
+      <div class="card">
+        <h3>본인 인증</h3>
+        <p class="muted" style="margin-bottom:16px;">안전한 이용을 위해 인증이 필요해요.</p>
+        <div class="field">
+          <label>휴대폰 번호</label>
+          <input type="tel" placeholder="010-0000-0000" inputmode="tel">
+        </div>
+        <button class="btn" onclick="showBars(); go('survey');">인증하고 시작하기</button>
+      </div>
+    </section>
+
+    <!-- ========== 메인 (IMG_0517 와이어프레임) ========== -->
+    <section class="screen" id="s-home">
+      <!-- 미니 달력 + 주간 일정 -->
+      <div class="home-grid">
+        <div class="mini-cal tap" onclick="go('calendar')" style="cursor:pointer;">
+          <div class="mc-head">2026. 7</div>
+          <div class="mc-grid" id="miniCal"></div>
+        </div>
+        <div class="week">
+          <h4>주간 일정</h4>
+          <ul>
+            <li><b>월</b> 눈 운동 5회</li>
+            <li><b>수</b> 안과 검진 10:30</li>
+            <li><b>금</b> 월간 시력검사</li>
+            <li><b>일</b> 휴식</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 운동 알림 배너 (06~22시, 4시간마다 하루 5회) -->
+      <div class="banner">
+        <span class="b-ic">🔔</span>
+        <div><b>운동 알림</b><br><span class="muted">오늘 <b>2 / 5회</b> 완료 · 다음 알림 14:00</span></div>
+      </div>
+
+      <!-- 원형 텍스트 메뉴 6개 (그림 없이 글자만) -->
+      <div class="quick">
+        <button class="q" onclick="go('test')"><span class="q-ic">검사</span></button>
+        <button class="q" onclick="go('exercise')"><span class="q-ic">운동</span></button>
+        <button class="q" onclick="go('report')"><span class="q-ic">결과</span></button>
+        <button class="q" onclick="go('reserve')"><span class="q-ic">예약</span></button>
+        <button class="q" onclick="go('point')"><span class="q-ic">포인트</span></button>
+        <button class="q" onclick="go('settings')"><span class="q-ic">설정</span></button>
+      </div>
+    </section>
+
+    <!-- ========== 달력 ========== -->
+    <section class="screen" id="s-calendar">
+      <h2 class="sec">건강 달력</h2>
+      <p class="sub">출석과 일정을 한눈에 확인하세요.</p>
+      <div class="card">
+        <div class="cal-head">
+          <button class="btn ghost sm" style="width:auto;padding:8px 14px;">‹</button>
+          <h3 style="margin:0;">2026년 7월</h3>
+          <button class="btn ghost sm" style="width:auto;padding:8px 14px;">›</button>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+        <div class="cal-legend">
+          <div>😊 출석함</div>
+          <div>💧 출석 안 함</div>
+          <div><i class="ring"></i> 병원 일정</div>
+          <div><i class="dot-eye"></i> 시력 검사</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>이 달의 일정</h3>
+        <div id="schedList"></div>
+      </div>
+    </section>
+
+    <!-- ========== 검사 (안구 검사 3종) ========== -->
+    <section class="screen" id="s-test">
+      <h2 class="sec">안구 검사</h2>
+      <div class="banner">
+        <span class="b-ic">📏</span>
+        <div><b>노안 검사 거리 자동 계산</b><br><span class="muted">화면과의 거리를 자동으로 측정해 정확한 검사를 도와드려요.</span></div>
+      </div>
+      <div class="card">
+        <div class="list-item" onclick="runPresbyTest()">
+          <div class="num">1</div><div class="grow"><b>노안 거리 측정</b><br><span class="muted">근거리 초점 조절 능력 확인</span></div><span class="chev">›</span>
+        </div>
+        <div class="list-item" onclick="startEyeTest()">
+          <div class="num">2</div><div class="grow"><b>란돌트 시표 시력 검사</b><br><span class="muted">고리 방향으로 시력 측정</span></div><span class="chev">›</span>
+        </div>
+        <div class="list-item" onclick="runBlinkTest()">
+          <div class="num">3</div><div class="grow"><b>순목 검사</b><br><span class="muted">눈 깜빡임 횟수·상태 확인</span></div><span class="chev">›</span>
+        </div>
+      </div>
+      <p class="sub" style="text-align:center;">📅 매월 자동 검사 알림 · 원할 때 자율 검사 가능</p>
+    </section>
+
+    <!-- ========== 란돌트 검사 화면 ========== -->
+    <section class="screen" id="s-landolt">
+      <h2 class="sec">란돌트 시표 검사</h2>
+      <div class="eye-box">
+        <div class="muted" style="margin-bottom:12px;">고리가 열린 방향을 눌러주세요</div>
+        <div class="landolt" id="landolt">C</div>
+      </div>
+      <div class="arrows">
+        <button class="blank"></button>
+        <button onclick="answer('up')">↑</button>
+        <button class="blank"></button>
+        <button onclick="answer('left')">←</button>
+        <button onclick="answer('down')">↓</button>
+        <button onclick="answer('right')">→</button>
+      </div>
+      <p class="sub" style="text-align:center;margin-top:16px;">진행률: <b id="progress">1 / 5</b></p>
+      <button class="btn ghost" onclick="go('report')">검사 결과 보기</button>
+    </section>
+
+    <!-- ========== 눈 운동 (안구 운동 5종) ========== -->
+    <section class="screen" id="s-exercise">
+      <h2 class="sec">안구 운동</h2>
+      <p class="sub">랜덤 · 맞춤 운동으로 눈 건강을 지켜요.</p>
+
+      <div class="banner">
+        <span class="b-ic">🪙</span>
+        <div><b>운동 1회 +10P</b> · 하루 최대 100P<br><span class="muted">꾸준히 운동하면 <b>하루 최대 100P</b>까지 적립돼요!</span></div>
+      </div>
+
+      <div class="card">
+        <div class="list-item" onclick="doExercise('깜박임 운동')"><div class="num">1</div><div class="grow"><b>깜박임 운동</b><br><span class="muted">눈물막 회복 · 건조 완화</span></div><span class="pill gold">+10P</span></div>
+        <div class="list-item" onclick="doExercise('온찜질·눈 마사지')"><div class="num">2</div><div class="grow"><b>온찜질, 눈 마사지</b><br><span class="muted">혈액순환 · 피로 회복</span></div><span class="pill gold">+10P</span></div>
+        <div class="list-item" onclick="doExercise('안구 움직임 운동')"><div class="num">3</div><div class="grow"><b>안구 움직임 운동</b><br><span class="muted">상하좌우 보기</span></div><span class="pill gold">+10P</span></div>
+        <div class="list-item" onclick="doExercise('초점 전환 운동')"><div class="num">4</div><div class="grow"><b>초점 전환 운동</b><br><span class="muted">원근 초점 조절</span></div><span class="pill gold">+10P</span></div>
+        <div class="list-item" onclick="doExercise('눈 스트레칭')"><div class="num">5</div><div class="grow"><b>눈 스트레칭</b><br><span class="muted">눈 주변 근육 이완</span></div><span class="pill gold">+10P</span></div>
+      </div>
+    </section>
+
+    <!-- ========== 병원 예약 ========== -->
+    <section class="screen" id="s-reserve">
+      <h2 class="sec">병원 예약</h2>
+      <div class="banner">
+        <span class="b-ic">🔔</span>
+        <div><b>예약 알림</b><br><span class="muted">예약 <b>일주일 전</b>과 <b>하루 전</b> 두 번 알려드려요.</span></div>
+      </div>
+      <div class="card">
+        <h3>다가오는 예약</h3>
+        <div class="row">
+          <div class="num" style="background:#f5dcd5;color:var(--danger);">병</div>
+          <div class="grow"><b>안과 정기 검진</b><br><span class="muted">7월 15일 (수) 오전 10:30</span></div>
+        </div>
+        <p class="muted" style="margin-top:12px;">✔ 앱으로 예약하면 일정이 달력에 자동 기록됩니다.</p>
+      </div>
+
+      <h3 style="margin:6px 0 10px;">내 주변 안과</h3>
+
+      <!-- 지도 (위치) -->
+      <div class="map">
+        <div class="map-grid"></div>
+        <div class="pin" style="left:30%;top:38%;">1</div>
+        <div class="pin" style="left:62%;top:30%;">2</div>
+        <div class="pin" style="left:48%;top:64%;">3</div>
+        <div class="here">📍 내 위치</div>
+      </div>
+
+      <div class="card hosp-item tap" onclick="toast('밝은눈안과 예약 (프로토타입)')">
+        <div class="row">
+          <div class="num" style="background:#e3ead9;color:var(--primary-d);">1</div>
+          <div class="grow">
+            <b>밝은눈 안과의원</b>
+            <div class="muted">📍 서울 강남구 · <b>0.4km</b> · 도보 6분</div>
+          </div>
+          <div class="rate"><span class="stars">★★★★★</span><b>4.8</b><span class="rc">리뷰 312</span></div>
+        </div>
+      </div>
+      <div class="card hosp-item tap" onclick="toast('서울제일안과 예약 (프로토타입)')">
+        <div class="row">
+          <div class="num" style="background:#e3ead9;color:var(--primary-d);">2</div>
+          <div class="grow">
+            <b>서울제일 안과</b>
+            <div class="muted">📍 서울 강남구 · <b>0.9km</b> · 도보 13분</div>
+          </div>
+          <div class="rate"><span class="stars">★★★★<span class="half">★</span></span><b>4.5</b><span class="rc">리뷰 208</span></div>
+        </div>
+      </div>
+      <div class="card hosp-item tap" onclick="toast('연세밝은안과 예약 (프로토타입)')">
+        <div class="row">
+          <div class="num" style="background:#e3ead9;color:var(--primary-d);">3</div>
+          <div class="grow">
+            <b>연세 밝은미소 안과</b>
+            <div class="muted">📍 서울 서초구 · <b>1.6km</b> · 차량 8분</div>
+          </div>
+          <div class="rate"><span class="stars">★★★★<span class="half">★</span></span><b>4.3</b><span class="rc">리뷰 97</span></div>
+        </div>
+      </div>
+
+      <h3 style="margin:18px 0 10px;">내 주변 안경원</h3>
+
+      <!-- 지도 (위치) -->
+      <div class="map">
+        <div class="map-grid"></div>
+        <div class="pin" style="left:40%;top:34%;background:var(--accent);">1</div>
+        <div class="pin" style="left:66%;top:56%;background:var(--accent);">2</div>
+        <div class="pin" style="left:26%;top:60%;background:var(--accent);">3</div>
+        <div class="here">📍 내 위치</div>
+      </div>
+
+      <div class="card hosp-item tap" onclick="toast('시야안경 방문 (프로토타입)')">
+        <div class="row">
+          <div class="num" style="background:#f6e3ba;color:#8a5e1e;">1</div>
+          <div class="grow">
+            <b>시야 안경원</b>
+            <div class="muted">📍 서울 강남구 · <b>0.3km</b> · 도보 4분</div>
+          </div>
+          <div class="rate"><span class="stars">★★★★★</span><b>4.9</b><span class="rc">리뷰 184</span></div>
+        </div>
+      </div>
+      <div class="card hosp-item tap" onclick="toast('으뜸안경 방문 (프로토타입)')">
+        <div class="row">
+          <div class="num" style="background:#f6e3ba;color:#8a5e1e;">2</div>
+          <div class="grow">
+            <b>으뜸 안경 콘택트</b>
+            <div class="muted">📍 서울 강남구 · <b>0.7km</b> · 도보 10분</div>
+          </div>
+          <div class="rate"><span class="stars">★★★★<span class="half">★</span></span><b>4.6</b><span class="rc">리뷰 143</span></div>
+        </div>
+      </div>
+      <div class="card hosp-item tap" onclick="toast('밝은세상안경 방문 (프로토타입)')">
+        <div class="row">
+          <div class="num" style="background:#f6e3ba;color:#8a5e1e;">3</div>
+          <div class="grow">
+            <b>밝은세상 안경원</b>
+            <div class="muted">📍 서울 서초구 · <b>1.2km</b> · 차량 6분</div>
+          </div>
+          <div class="rate"><span class="stars">★★★★<span class="half">★</span></span><b>4.4</b><span class="rc">리뷰 76</span></div>
+        </div>
+      </div>
+
+      <button class="btn" onclick="toast('예약·방문 예약하기 (프로토타입)')">＋ 새 예약 잡기</button>
+    </section>
+
+    <!-- ========== 포인트 & 상점 ========== -->
+    <section class="screen" id="s-point">
+      <h2 class="sec">포인트</h2>
+      <div class="card" style="background:var(--accent);color:#fff;border:none;">
+        <div style="font-size:15px;opacity:.9;">사용 가능 포인트</div>
+        <div style="font-size:32px;font-weight:900;">🪙 12,400 P</div>
+        <div class="pbar" style="background:rgba(255,255,255,.3);"><i style="width:40%;background:#fff;"></i></div>
+        <div style="font-size:14px;opacity:.9;">오늘 40P 적립 · 하루 최대 100P</div>
+      </div>
+
+      <h3 style="margin:6px 0 12px;">포인트 상품 교환</h3>
+      <div class="shop-grid">
+        <div class="shop-item"><div class="photo">🔎</div><div class="nm">기성 돋보기</div><div class="price">10,000 P</div><button class="btn gold sm" onclick="buy('기성 돋보기', 10000)">교환</button></div>
+        <div class="shop-item"><div class="photo">🎟️</div><div class="nm">안경원 할인권</div><div class="price">5,000 P~</div><button class="btn gold sm" onclick="useVoucher()">사용</button></div>
+      </div>
+      <p class="muted" style="margin-top:12px;font-size:14px;line-height:1.6;">
+        🎟️ <b>안경원 할인권</b>은 <b>5,000P 이상</b>부터 사용할 수 있어요.<br>
+        <b>1P = 1원</b>으로 연계된 안경원에서 할인에 사용됩니다.
+      </p>
+    </section>
+
+    <!-- ========== 설정 ========== -->
+    <section class="screen" id="s-settings">
+      <h2 class="sec">설정</h2>
+
+      <h3 style="margin:2px 0 10px;">보호자 연동</h3>
+      <div class="card tap" onclick="go('guardian')" style="background:linear-gradient(135deg,#eef2e4,#e3ead9);">
+        <div class="row">
+          <div class="num" style="background:#fff;color:var(--primary-d);">👪</div>
+          <div class="grow"><b>보호자와 연동하기</b><br><span class="muted">가족이 눈 건강·일정을 함께 확인해요</span></div>
+          <span class="chev">›</span>
+        </div>
+      </div>
+
+      <h3 style="margin:14px 0 10px;">일반</h3>
+      <div class="card">
+        <div class="list-item" onclick="toast('알림 설정')"><div class="grow"><b>운동·검사 알림</b></div><span class="chev">›</span></div>
+        <div class="list-item" onclick="toast('글자 크기')"><div class="grow"><b>글자 크기 조정</b></div><span class="chev">›</span></div>
+        <div class="list-item" onclick="toast('화면 색상')"><div class="grow"><b>저피로 화면 색상</b></div><span class="chev">›</span></div>
+        <div class="list-item" onclick="toast('본인 인증 정보')"><div class="grow"><b>본인 인증 정보</b></div><span class="chev">›</span></div>
+      </div>
+    </section>
+
+    <!-- ========== 보호자 연동 ========== -->
+    <section class="screen" id="s-guardian">
+      <h2 class="sec">보호자 연동</h2>
+      <p class="sub">연동하면 보호자가 나의 출석·검사 결과·병원 일정을 함께 확인하고 알림을 받을 수 있어요.</p>
+
+      <div class="card">
+        <h3>연동된 보호자</h3>
+        <div class="list-item" style="cursor:default;">
+          <div class="num" style="background:#e3ead9;color:var(--primary-d);">딸</div>
+          <div class="grow"><b>김영희</b><br><span class="muted">010-****-1234 · 연동됨</span></div>
+          <span class="pill">활성</span>
+        </div>
+        <div class="list-item" style="cursor:default;">
+          <div class="num" style="background:#f3e6c9;color:#8a5e1e;">?</div>
+          <div class="grow"><b>초대 대기 중</b><br><span class="muted">아들 · 승인 대기</span></div>
+          <span class="pill gold">대기</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>공유 항목</h3>
+        <div class="list-item" style="cursor:default;"><div class="grow">출석 현황</div><span class="pill">공유 중</span></div>
+        <div class="list-item" style="cursor:default;"><div class="grow">검사 결과</div><span class="pill">공유 중</span></div>
+        <div class="list-item" style="cursor:default;"><div class="grow">병원 예약 알림</div><span class="pill">공유 중</span></div>
+      </div>
+
+      <button class="btn" onclick="toast('초대 코드 발송 (프로토타입)')">＋ 보호자 초대하기</button>
+    </section>
+
+    <!-- ========== 내 프로필 ========== -->
+    <section class="screen" id="s-profile">
+      <h2 class="sec">내 프로필</h2>
+
+      <div class="card" style="text-align:center;background:linear-gradient(135deg,#eef2e4,#e3ead9);">
+        <div class="avatar" style="width:80px;height:80px;font-size:22px;margin:6px auto 12px;">사진</div>
+        <div style="font-size:22px;font-weight:800;letter-spacing:-.5px;">민병관 님</div>
+        <p class="muted" style="margin-top:4px;">62세 · 아이포인트와 함께 눈 건강 관리 중</p>
+        <div class="row" style="justify-content:center;gap:8px;margin-top:12px;">
+          <span class="pill">보유 12,400 P</span>
+          <span class="pill gold">연속 출석 8일</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>내 정보</h3>
+        <div class="list-item" style="cursor:default;"><div class="grow">이름</div><b>민병관</b></div>
+        <div class="list-item" style="cursor:default;"><div class="grow">나이</div><b>62세</b></div>
+        <div class="list-item" style="cursor:default;"><div class="grow">연락처</div><b>010-****-5678</b></div>
+      </div>
+
+      <div class="card">
+        <h3>바로가기</h3>
+        <div class="list-item" onclick="go('point')"><div class="grow"><b>포인트 · 상품 교환</b></div><span class="chev">›</span></div>
+        <div class="list-item" onclick="go('survey')"><div class="grow"><b>문진표</b></div><span class="chev">›</span></div>
+        <div class="list-item" onclick="go('report')"><div class="grow"><b>검사 결과</b></div><span class="chev">›</span></div>
+        <div class="list-item" onclick="go('guardian')"><div class="grow"><b>보호자 연동</b></div><span class="chev">›</span></div>
+        <div class="list-item" onclick="go('settings')"><div class="grow"><b>설정</b></div><span class="chev">›</span></div>
+      </div>
+    </section>
+
+    <!-- ========== 문진표 (시니어 눈 건강 10문항) ========== -->
+    <section class="screen" id="s-survey">
+      <div class="row" style="justify-content:space-between;align-items:center;">
+        <h2 class="sec" style="margin:0;">문진표</h2>
+        <button type="button" class="skip-top" onclick="skipSurvey()">건너뛰기 ›</button>
+      </div>
+      <p class="sub">시니어 눈 건강 문진표 (10문항) · 솔직하게 답해 주세요.</p>
+
+      <form id="surveyForm">
+
+        <div class="survey-sec">1. 기본 정보</div>
+        <div class="card">
+          <div class="q-block">
+            <div class="q-ttl"><span class="no">①</span> 나이를 선택해주세요.</div>
+            <label class="opt"><input type="radio" name="age" value="0"> 60세 이하</label>
+            <label class="opt"><input type="radio" name="age" value="0"> 60~64세</label>
+            <label class="opt"><input type="radio" name="age" value="0"> 65~69세</label>
+            <label class="opt"><input type="radio" name="age" value="0"> 70~74세</label>
+            <label class="opt"><input type="radio" name="age" value="0"> 75세 이상</label>
+          </div>
+          <div class="q-block" style="margin-bottom:0;">
+            <div class="q-ttl"><span class="no">②</span> 성별</div>
+            <label class="opt"><input type="radio" name="gender" value="0"> 남성</label>
+            <label class="opt"><input type="radio" name="gender" value="0"> 여성</label>
+          </div>
+        </div>
+
+        <div class="survey-sec">2. 눈 증상</div>
+        <div class="card">
+          <div class="q-block">
+            <div class="q-ttl"><span class="no">1.</span> 평소 눈이 건조하거나 뻑뻑한 느낌이 있나요?</div>
+            <label class="opt"><input type="radio" name="q1" value="0"> 전혀 없다</label>
+            <label class="opt"><input type="radio" name="q1" value="1"> 가끔 있다</label>
+            <label class="opt"><input type="radio" name="q1" value="2"> 자주 있다</label>
+            <label class="opt"><input type="radio" name="q1" value="3"> 거의 매일 있다</label>
+          </div>
+          <div class="q-block">
+            <div class="q-ttl"><span class="no">2.</span> 가까운 글씨(신문, 스마트폰)가 잘 보이지 않나요?</div>
+            <label class="opt"><input type="radio" name="q2" value="0"> 전혀 아니다</label>
+            <label class="opt"><input type="radio" name="q2" value="1"> 가끔 그렇다</label>
+            <label class="opt"><input type="radio" name="q2" value="2"> 자주 그렇다</label>
+            <label class="opt"><input type="radio" name="q2" value="3"> 매우 그렇다</label>
+          </div>
+          <div class="q-block">
+            <div class="q-ttl"><span class="no">3.</span> 멀리 있는 간판이나 TV 자막이 흐릿하게 보이나요?</div>
+            <label class="opt"><input type="radio" name="q3" value="0"> 전혀 아니다</label>
+            <label class="opt"><input type="radio" name="q3" value="1"> 가끔 그렇다</label>
+            <label class="opt"><input type="radio" name="q3" value="2"> 자주 그렇다</label>
+            <label class="opt"><input type="radio" name="q3" value="3"> 매우 그렇다</label>
+          </div>
+          <div class="q-block">
+            <div class="q-ttl"><span class="no">4.</span> 불빛이 번져 보이거나 야간에 잘 보이지 않나요?</div>
+            <label class="opt"><input type="radio" name="q4" value="0"> 전혀 아니다</label>
+            <label class="opt"><input type="radio" name="q4" value="1"> 가끔 그렇다</label>
+            <label class="opt"><input type="radio" name="q4" value="2"> 자주 그렇다</label>
+            <label class="opt"><input type="radio" name="q4" value="3"> 매우 그렇다</label>
+          </div>
+          <div class="q-block">
+            <div class="q-ttl"><span class="no">5.</span> 사물의 가운데가 찌그러져 보이거나 글자가 휘어 보인 적이 있나요?</div>
+            <label class="opt"><input type="radio" name="q5" value="0"> 없다</label>
+            <label class="opt"><input type="radio" name="q5" value="2"> 가끔 있다</label>
+            <label class="opt"><input type="radio" name="q5" value="4"> 자주 있다</label>
+          </div>
+          <div class="q-block">
+            <div class="q-ttl"><span class="no">6.</span> 옆이 잘 안 보이거나 시야가 좁아진 느낌이 있나요?</div>
+            <label class="opt"><input type="radio" name="q6" value="0"> 없다</label>
+            <label class="opt"><input type="radio" name="q6" value="2"> 가끔 있다</label>
+            <label class="opt"><input type="radio" name="q6" value="4"> 자주 있다</label>
+          </div>
+          <div class="q-block" style="margin-bottom:0;">
+            <div class="q-ttl"><span class="no">7.</span> 갑자기 시력이 떨어지거나 시야가 가려진 적이 있나요?</div>
+            <label class="opt"><input type="radio" name="q7" value="0"> 없다</label>
+            <label class="opt"><input type="radio" name="q7" value="3"> 한 번 있다</label>
+            <label class="opt"><input type="radio" name="q7" value="5"> 여러 번 있다</label>
+          </div>
+        </div>
+
+        <div class="survey-sec">3. 생활 및 병력</div>
+        <div class="card">
+          <div class="q-block">
+            <div class="q-ttl"><span class="no">8.</span> 하루 스마트폰 또는 TV를 보는 시간은?</div>
+            <label class="opt"><input type="radio" name="q8" value="0"> 2시간 미만</label>
+            <label class="opt"><input type="radio" name="q8" value="1"> 2~4시간</label>
+            <label class="opt"><input type="radio" name="q8" value="2"> 4~6시간</label>
+            <label class="opt"><input type="radio" name="q8" value="3"> 6시간 이상</label>
+          </div>
+          <div class="q-block">
+            <div class="q-ttl"><span class="no">9.</span> 다음 질환이 있나요? <span style="font-weight:600;color:var(--text-sub);">(중복 선택)</span></div>
+            <label class="opt"><input type="checkbox" name="q9" value="2"> 당뇨병 (+2)</label>
+            <label class="opt"><input type="checkbox" name="q9" value="1"> 고혈압 (+1)</label>
+            <label class="opt"><input type="checkbox" name="q9" value="1"> 고지혈증 (+1)</label>
+            <label class="opt"><input type="checkbox" name="q9" value="0"> 없음</label>
+          </div>
+          <div class="q-block" style="margin-bottom:0;">
+            <div class="q-ttl"><span class="no">10.</span> 최근 1년 안에 안과 검진을 받으셨나요?</div>
+            <label class="opt"><input type="radio" name="q10" value="0"> 6개월 이내</label>
+            <label class="opt"><input type="radio" name="q10" value="1"> 1년 이내</label>
+            <label class="opt"><input type="radio" name="q10" value="2"> 2년 이상</label>
+            <label class="opt"><input type="radio" name="q10" value="2"> 기억나지 않는다</label>
+          </div>
+        </div>
+
+        <button type="button" class="btn" onclick="submitSurvey()">결과 확인하기</button>
+      </form>
+    </section>
+
+    <!-- ========== 결과 (검사 결과 분석·권장) ========== -->
+    <section class="screen" id="s-report">
+      <h2 class="sec">결과</h2>
+      <p class="sub">문진표 결과와 간이검사 결과를 각각 확인할 수 있어요.</p>
+
+      <!-- 문진 결과 — 문진표 응답 반영 (JS 갱신) -->
+      <h3 style="margin:16px 0 8px;font-size:17px;">📝 문진 결과</h3>
+      <div class="card" id="surveyResultCard" style="text-align:center;"></div>
+
+      <!-- 간이검사 결과 — 앱 내 검사(시력·노안·순목) 반영 (JS 갱신) -->
+      <h3 style="margin:20px 0 8px;font-size:17px;">🔎 간이검사 결과</h3>
+      <div class="card" id="testResultCard" style="text-align:center;"></div>
+
+      <!-- 결과 단계 안내 -->
+      <div class="card">
+        <h3>결과 단계 안내</h3>
+        <div class="list-item" id="lvl-danger" style="cursor:default;align-items:flex-start;border-radius:12px;">
+          <div class="num" style="background:#fbe1e1;color:var(--danger);">🔴</div>
+          <div class="grow"><b>위험 <span class="pill gold cur" style="font-size:11px;display:none;">현재</span></b><br><span class="muted">안질환이 의심되니 신속히 안과 방문을 권장드립니다.</span></div>
+        </div>
+        <div class="list-item" id="lvl-warn" style="cursor:default;align-items:flex-start;border-radius:12px;">
+          <div class="num" style="background:#f6e3ba;color:#8a5e1e;">🟡</div>
+          <div class="grow"><b>주의 <span class="pill gold cur" style="font-size:11px;display:none;">현재</span></b><br><span class="muted">노안 초기 증상으로 의심되니 안과나 안경원에 방문을 권장드립니다.</span></div>
+        </div>
+        <div class="list-item" id="lvl-good" style="cursor:default;align-items:flex-start;border-radius:12px;">
+          <div class="num" style="background:#e3ead9;color:var(--primary-d);">🟢</div>
+          <div class="grow"><b>양호 <span class="pill gold cur" style="font-size:11px;display:none;">현재</span></b><br><span class="muted">노안 증상이 의심되진 않으나 안구 운동 등의 지속적인 관리를 권장드립니다.</span></div>
+        </div>
+      </div>
+
+      <!-- 눈 건강 추이 (월간/연간) -->
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <h3 style="margin:0;">눈 건강 추이</h3>
+          <div class="seg">
+            <button id="tbtn-month" class="seg-btn on" onclick="setTrend('month')">월간</button>
+            <button id="tbtn-year" class="seg-btn" onclick="setTrend('year')">연간</button>
+          </div>
+        </div>
+        <div class="chart" id="trendChart"></div>
+        <div id="trendEmpty" style="text-align:center;padding:34px 0;color:var(--text-sub);font-size:15px;">아직 검사를 하지 않았습니다.</div>
+        <p class="muted" id="trendNote" style="margin-top:8px;">최근 시력이 조금씩 회복되고 있어요. 꾸준히 관리해 주세요! 👏</p>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ===== 하단 네비 (텍스트) ===== -->
+  <nav class="nav" id="nav" style="display:none;">
+    <button class="active" data-t="home" onclick="go('home')">홈</button>
+    <button data-t="calendar" onclick="go('calendar')">달력</button>
+    <button data-t="test" onclick="go('test')">검사</button>
+    <button data-t="exercise" onclick="go('exercise')">운동</button>
+    <button data-t="report" onclick="go('report')">결과</button>
+  </nav>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+  const titles = {
+    home:"아이포인트", calendar:"건강 달력", test:"안구 검사", landolt:"시력 검사",
+    report:"결과", exercise:"안구 운동", point:"포인트", reserve:"병원 예약",
+    settings:"설정", guardian:"보호자 연동", profile:"내 프로필", survey:"문진표"
+  };
+  // 하단 네비에서 강조할 탭 매핑
+  const navTab = {landolt:'test', point:'home', reserve:'home', settings:'home', guardian:'home', profile:'home', survey:'home'};
+
+  let curScreen = 'onboard';
+  const histStack = [];
+
+  function go(id, isBack){
+    if(!isBack && curScreen && curScreen!==id && curScreen!=='onboard'){
+      histStack.push(curScreen);
+    }
+    if(id==='home') histStack.length = 0;   // 홈은 최상위 → 히스토리 초기화
+    curScreen = id;
+
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById('s-'+id).classList.add('active');
+    document.querySelector('.screens').scrollTop = 0;
+    const tab = navTab[id] || id;
+    document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active', b.dataset.t===tab));
+
+    document.getElementById('backBtn').classList.toggle('show', histStack.length>0);
+  }
+
+  function goBack(){
+    const prev = histStack.pop();
+    if(prev) go(prev, true);
+  }
+
+  function showBars(){
+    document.getElementById('appbar').style.display='flex';
+    document.getElementById('nav').style.display='flex';
+  }
+
+  function toast(msg){
+    const t=document.getElementById('toast');
+    t.textContent=msg; t.classList.add('show');
+    clearTimeout(window._tt);
+    window._tt=setTimeout(()=>t.classList.remove('show'),1800);
+  }
+
+  function buy(name, p){ toast(name + " 교환 완료! " + p.toLocaleString() + "P 사용"); }
+  function useVoucher(){ toast("안경원 할인권 사용 · 1P = 1원 (5,000P 이상)"); }
+  function doExercise(name){ toast(name + " 시작 · +10P 적립"); }
+  function startEyeTest(){ go('landolt'); }
+
+  /* ===== 결과 카드 렌더링 (문진 결과 + 간이검사 결과 분리) ===== */
+  const RESULT = {
+    danger:{emoji:'🔴', badge:'위험', bg:'linear-gradient(135deg,#fdeaea,#f9d9d9)', border:'#e59a9a',
+            title:'안질환이 의심돼요', msg:'안질환이 의심되니 신속히 안과 방문을 권장드립니다.'},
+    warn:{emoji:'🟡', badge:'주의', bg:'linear-gradient(135deg,#fff5e0,#fceccb)', border:'#e6c877',
+          title:'노안 초기 증상이 의심돼요', msg:'노안 초기 증상으로 의심되니 안과나 안경원에 방문을 권장드립니다.'},
+    good:{emoji:'🟢', badge:'양호', bg:'linear-gradient(135deg,#eef2e4,#e3ead9)', border:'#b6cba0',
+          title:'눈 건강이 양호해요', msg:'노안 증상이 의심되진 않으나 안구 운동 등의 지속적인 관리를 권장드립니다.'}
+  };
+  const SEV = {good:0, warn:1, danger:2};
+
+  // 문진 결과 (null = 아직 진행 안 함)
+  let surveyTier = null;
+
+  // 간이검사 3종 결과 (null = 미검사)
+  const testResults = {vision:null, presby:null, blink:null};
+  const TEST_LABELS = {vision:'시력 검사', presby:'노안 거리 측정', blink:'순목 검사'};
+
+  function worstOf(list){
+    let w = null;
+    list.filter(Boolean).forEach(t => { if(w === null || SEV[t] > SEV[w]) w = t; });
+    return w;
+  }
+  // 간이검사 종합 등급 = 3종 중 가장 심각한 단계 (미검사 항목 제외)
+  function getTestTier(){ return worstOf(Object.values(testResults)); }
+
+  function resultCardHTML(tier){
+    const r = RESULT[tier];
+    const btn = (tier === 'good')
+      ? '<button class="btn ghost" style="margin-top:14px;" onclick="go(\'exercise\')">안구 운동 하러 가기</button>'
+      : '<button class="btn" style="margin-top:14px;" onclick="go(\'reserve\')">가까운 안과 예약하기</button>';
+    return '<div style="font-size:44px;">' + r.emoji + '</div>' +
+      '<span class="pill gold" style="margin-top:6px;">' + r.badge + '</span>' +
+      '<h3 style="font-size:20px;margin:10px 0 6px;">' + r.title + '</h3>' +
+      '<p style="font-size:15px;line-height:1.6;color:var(--text);">' + r.msg + '</p>' + btn;
+  }
+  function surveyEmptyHTML(){
+    return '<div style="font-size:40px;">📝</div>' +
+      '<h3 style="font-size:18px;margin:8px 0 6px;">아직 문진표를 작성하지 않았어요</h3>' +
+      '<p style="font-size:14px;color:var(--text-sub);line-height:1.6;">10문항 문진표를 작성하면 눈 건강 상태를 분석해 드려요.</p>' +
+      '<button class="btn" style="margin-top:14px;" onclick="go(\'survey\')">문진표 작성하기</button>';
+  }
+  function testEmptyHTML(){
+    return '<div style="font-size:40px;">🔎</div>' +
+      '<h3 style="font-size:18px;margin:8px 0 6px;">아직 검사를 하지 않았습니다.</h3>' +
+      '<p style="font-size:14px;color:var(--text-sub);line-height:1.6;">시력·노안 거리·순목 검사를 진행하면 결과를 확인할 수 있어요.</p>' +
+      '<button class="btn" style="margin-top:14px;" onclick="go(\'test\')">간이검사 시작하기</button>';
+  }
+  // 검사별 세부 결과 (시력·노안 거리·순목)
+  function testBreakdownHTML(){
+    const rows = ['vision','presby','blink'].map(k=>{
+      const t = testResults[k];
+      const st = t ? (RESULT[t].emoji + ' ' + RESULT[t].badge) : '⚪ 미검사';
+      return '<div style="display:flex;justify-content:space-between;font-size:14px;padding:5px 0;">' +
+             '<span>' + TEST_LABELS[k] + '</span><b>' + st + '</b></div>';
+    }).join('');
+    return '<div style="margin-top:14px;border-top:1px solid rgba(0,0,0,.08);padding-top:10px;text-align:left;">' + rows + '</div>';
+  }
+
+  function paintSurveyCard(){
+    const card = document.getElementById('surveyResultCard');
+    if(surveyTier){
+      card.style.background = RESULT[surveyTier].bg;
+      card.style.border = '1.5px solid ' + RESULT[surveyTier].border;
+      card.innerHTML = resultCardHTML(surveyTier);
+    } else {
+      card.style.background = 'var(--surface)';
+      card.style.border = '1.5px dashed var(--line)';
+      card.innerHTML = surveyEmptyHTML();
+    }
+  }
+  function paintTestCard(){
+    const card = document.getElementById('testResultCard');
+    const overall = getTestTier();
+    if(overall){
+      card.style.background = RESULT[overall].bg;
+      card.style.border = '1.5px solid ' + RESULT[overall].border;
+      card.innerHTML = resultCardHTML(overall) + testBreakdownHTML();
+    } else {
+      card.style.background = 'var(--surface)';
+      card.style.border = '1.5px dashed var(--line)';
+      card.innerHTML = testEmptyHTML();
+    }
+  }
+  function renderReport(){
+    paintSurveyCard();
+    paintTestCard();
+    // 단계 안내: 문진·간이검사 결과 중 더 심각한 단계를 현재 상태로 강조
+    const worst = worstOf([surveyTier, getTestTier()]);
+    ['danger','warn','good'].forEach(t=>{
+      const row = document.getElementById('lvl-'+t);
+      if(!row) return;
+      row.style.background = (t===worst) ? '#f4f0e2' : 'transparent';
+      const cur = row.querySelector('.cur');
+      if(cur) cur.style.display = (t===worst) ? 'inline-block' : 'none';
+    });
+    renderTrend();
+  }
+
+  /* ===== 간이검사 실행 (노안 거리·순목은 시뮬레이션) ===== */
+  function runPresbyTest(){
+    testResults.presby = 'warn';   // 근거리 초점 저하 경향
+    renderReport();
+    toast('노안 거리 측정 완료!');
+    go('report');
+  }
+  function runBlinkTest(){
+    testResults.blink = 'good';    // 깜빡임 정상
+    renderReport();
+    toast('순목 검사 완료!');
+    go('report');
+  }
+
+  /* ===== 눈 건강 추이 (월간/연간) ===== */
+  const TREND = {
+    month: [{label:'1주',v:0.7},{label:'2주',v:0.8},{label:'3주',v:0.8},{label:'4주',v:0.9}],
+    year:  [{label:'2월',v:0.6},{label:'3월',v:0.7},{label:'4월',v:0.7},{label:'5월',v:0.8},{label:'6월',v:0.8},{label:'7월',v:0.9}]
+  };
+  let trendMode = 'month';
+  function setTrend(mode){ trendMode = mode; renderTrend(); }
+  function renderTrend(){
+    const chart = document.getElementById('trendChart');
+    const empty = document.getElementById('trendEmpty');
+    const note  = document.getElementById('trendNote');
+    document.getElementById('tbtn-month').classList.toggle('on', trendMode==='month');
+    document.getElementById('tbtn-year').classList.toggle('on', trendMode==='year');
+    const done = Object.values(testResults).some(Boolean);
+    if(!done){
+      chart.style.display = 'none';
+      empty.style.display = '';
+      note.style.display = 'none';
+      return;
+    }
+    chart.style.display = '';
+    empty.style.display = 'none';
+    note.style.display = '';
+    chart.innerHTML = TREND[trendMode].map(d=>{
+      const h = Math.round(d.v/1.05*100);
+      return '<div class="bar"><b>'+d.v.toFixed(1)+'</b><i style="height:'+h+'%;"></i><span>'+d.label+'</span></div>';
+    }).join('');
+  }
+
+  /* ===== 문진표 채점 ===== */
+  function surveyVal(name){
+    const el = document.querySelector('input[name="'+name+'"]:checked');
+    return el ? (+el.value) : 0;
+  }
+  function submitSurvey(){
+    const q5 = surveyVal('q5'), q6 = surveyVal('q6'), q7 = surveyVal('q7');
+    let total = 0;
+    ['q1','q2','q3','q4','q5','q6','q7','q8','q10'].forEach(n => total += surveyVal(n));
+    document.querySelectorAll('input[name="q9"]:checked').forEach(c => total += (+c.value));
+
+    if(q7 >= 3 || q5 >= 4 || q6 >= 4 || total >= 15){        // 응급/의심 증상 또는 고위험 점수
+      surveyTier = 'danger';
+    } else if(total >= 6){                                    // 중간 → 노안 초기 주의
+      surveyTier = 'warn';
+    } else {
+      surveyTier = 'good';
+    }
+    renderReport();
+    toast('문진표 결과가 반영되었어요');
+    go('report');
+  }
+  function skipSurvey(){
+    toast('문진표를 건너뛰었어요');
+    go('home');
+  }
+
+  // 란돌트 시표 검사 — 방향 랜덤 회전, 점점 작아짐
+  const dirs=['up','right','down','left'];
+  const rot={up:270,right:0,down:90,left:180};
+  let step=1, cur, correct=0;
+  function newTarget(){
+    cur=dirs[step % dirs.length];
+    const c=document.getElementById('landolt');
+    c.style.transform='rotate('+rot[cur]+'deg)';
+    c.style.fontSize=(130 - step*14)+'px';
+    document.getElementById('progress').textContent=step+' / 5';
+  }
+  function answer(d){
+    if(d===cur) correct++;
+    if(step>=5){
+      // 정답 수로 시력 검사 결과 산출 (4~5 양호 / 2~3 주의 / 0~1 위험)
+      testResults.vision = correct>=4 ? 'good' : correct>=2 ? 'warn' : 'danger';
+      renderReport();
+      toast('검사 완료! 결과를 확인하세요.'); go('report');
+      step=1; correct=0; newTarget(); return;
+    }
+    toast(d===cur ? '정답! 👍' : '다시 볼게요');
+    step++; newTarget();
+  }
+  newTarget();
+
+  // 데이터: 2026년 7월 (1일=수요일)
+  const YEAR_DATA = {
+    days:31, start:3, today:9,
+    hosp:[15], eye:[9,20],
+    // 출석: 오늘(9일) 이전은 대부분 출석, 일부 미출석
+    present:[1,2,4,5,6,7,8,9],
+    absent:[3]
+  };
+  // 이 달의 전체 일정 (요일 계산: (start + d - 1) % 7)
+  const DOW=['일','월','화','수','목','금','토'];
+  const EVENTS = [
+    {d:9,  type:'eye',  color:'var(--accent)', title:'월간 시력 검사', time:'오늘 예정'},
+    {d:15, type:'hosp', color:'var(--danger)', title:'안과 정기 검진', time:'오전 10:30 · 밝은눈 안과'},
+    {d:20, type:'eye',  color:'var(--accent)', title:'노안 거리 측정', time:'검사 알림'},
+    {d:28, type:'hosp', color:'var(--danger)', title:'안과 정기 검진', time:'오후 2:00 · 서울제일 안과'}
+  ];
+
+  function attIcon(d){
+    if(YEAR_DATA.present.includes(d)) return '😊';   // 출석: 스마일 이모티콘
+    if(YEAR_DATA.absent.includes(d))  return '💧';   // 미출석: 눈물
+    return '';
+  }
+
+  // 전체 달력 렌더 (출석: 😊 / 미출석: 💧 / 병원 일정: 날짜 원형 표시)
+  (function(){
+    const grid=document.getElementById('calGrid');
+    DOW.forEach(d=>{ const e=document.createElement('div'); e.className='dow'; e.textContent=d; grid.appendChild(e); });
+    for(let i=0;i<YEAR_DATA.start;i++){ grid.appendChild(document.createElement('div')); }
+    for(let d=1; d<=YEAR_DATA.days; d++){
+      const cell=document.createElement('div'); cell.className='day';
+      if(d===YEAR_DATA.today) cell.classList.add('today');
+      if(YEAR_DATA.hosp.includes(d)) cell.classList.add('hosp');  // 병원 일정 → 원형 테두리
+      cell.innerHTML='<span>'+d+'</span>';
+      const att=attIcon(d);
+      if(att){ const a=document.createElement('div'); a.className='att'; a.textContent=att; cell.appendChild(a); }
+      // 시력 검사만 점으로 표시
+      if(YEAR_DATA.eye.includes(d)){
+        const dots=document.createElement('div'); dots.className='dots';
+        dots.innerHTML='<i class="dot-eye"></i>'; cell.appendChild(dots);
+      }
+      grid.appendChild(cell);
+    }
+  })();
+
+  // 이 달의 전체 일정 목록 렌더
+  (function(){
+    const box=document.getElementById('schedList');
+    EVENTS.forEach(ev=>{
+      const dow=DOW[(YEAR_DATA.start+ev.d-1)%7];
+      const row=document.createElement('div'); row.className='sched';
+      row.innerHTML=
+        '<div class="date"><b>'+ev.d+'</b><span>'+dow+'</span></div>'+
+        '<div class="grow"><b>'+ev.title+'</b><br><span class="muted">'+ev.time+'</span></div>'+
+        '<span class="tag" style="background:'+ev.color+';"></span>';
+      box.appendChild(row);
+    });
+  })();
+
+  // 메인 미니 달력 렌더
+  (function(){
+    const grid=document.getElementById('miniCal');
+    DOW.forEach(d=>{ const e=document.createElement('div'); e.className='d'; e.style.fontWeight='800'; e.textContent=d; grid.appendChild(e); });
+    for(let i=0;i<YEAR_DATA.start;i++){ grid.appendChild(document.createElement('div')); }
+    for(let d=1; d<=YEAR_DATA.days; d++){
+      const cell=document.createElement('div'); cell.className='d';
+      if(d===YEAR_DATA.today) cell.classList.add('today');
+      if(YEAR_DATA.hosp.includes(d)){ cell.style.boxShadow='inset 0 0 0 2px var(--danger)'; cell.style.borderRadius='50%'; }
+      cell.appendChild(Object.assign(document.createElement('span'),{textContent:d,style:'position:relative'}));
+      const mk=attIcon(d);
+      if(mk){ const m=document.createElement('span'); m.className='mk'; m.textContent=mk; cell.appendChild(m); }
+      grid.appendChild(cell);
+    }
+  })();
+
+  // 결과 화면 초기값 (문진·간이검사 모두 미진행 → 안내 카드 / 추이 미표시)
+  renderReport();
+</script>
+</body>
+</html>
